@@ -15,6 +15,7 @@ import {
 import enUS from '@ant-design/react-native/lib/locale-provider/en_US';
 import {Button, Flex, Provider, WingBlank, Modal,List} from '@ant-design/react-native';
 
+import { Avatar, Badge, Icon, withBadge,SearchBar } from 'react-native-elements'
 
 import {TitleOptions} from "../utils/Constants";
 
@@ -45,7 +46,7 @@ class Screen1 extends React.Component {
   state = {
     catAddition:false,
     refreshing: false,
-    sortby:""
+    sortby:"",searchList:[],searchTerm:""
   }
 
 
@@ -62,21 +63,29 @@ class Screen1 extends React.Component {
 
   componentDidMount() {
     console.log("csk->","componentDidMount")
-    this.props.addAll(
-      [
-        {name:"asad",phone:"9679198961",type:"home"},
-        {name:"saad",phone:"9540154319",type:"home"}
-      ]
-    )
+    // this.props.addAll(
+    //   [
+    //     {name:"asad",phone:"9679198961",type:"home"},
+    //     {name:"saad",phone:"9540154319",type:"home"}
+    //   ]
+    // )
+    let a=0;
 
-    // PermissionsAndroid.request(
-    //   PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
-    //   {
-    //     'title': 'Contacts',
-    //     'message': 'This app would like to view your contacts.',
-    //     'buttonPositive': 'Please accept'
-    //   }
-    // ).then(()=>this.getList() )
+    PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+      {
+        'title': 'Contacts',
+        'message': 'This app would like to view your contacts.',
+        'buttonPositive': 'Please accept'
+      }
+    ).then(()=>{
+      console.log("hi here")
+      a=1;
+      this.getList()} )
+
+      if(a===0 && this.props.cats===[])
+      this.getList()
+
   }
 
   setErrorState() {
@@ -105,9 +114,71 @@ class Screen1 extends React.Component {
           if (err) {
               console.log("csk->",err);
           } else {
-              console.log("csk->",contacts);
+            this.props.addAll(contacts)
+              //console.log("csk->",contacts);
           }
       })
+  }
+
+  searchInit=(search)=>{
+    const term=search.toLowerCase()
+    let datalist=[]
+    if(this.props.cats!==null && this.props.cats.length>0){
+      console.log("in check data >0")
+      this.props.cats.forEach((item,i)=>{
+        if(item.displayName.toLowerCase().includes(term)){
+          datalist.push(item)
+        }
+      })
+    }
+    if(datalist.length>0){
+      this.setState({
+        searchList:datalist,searchTerm:term
+      })}
+    else {
+      Toast.showWithGravity('No Match!', Toast.SHORT, Toast.TOP)
+    }
+    console.log(datalist,term,this.state.searchList)
+  }
+
+  renderSearchAndFilter=()=>{
+    const { searchTerm } = this.state;
+    
+    const style=[styles.filterStyle]
+    const styleA=[styles.filterStyle,styles.filterActive]
+    let filStyle=this.state.sortby==="nameD"?styleA:style;
+    return(
+        <View style={{height:47, width : '100%', alignItems:'center',justifyContent:'center', flexDirection:'row', backgroundColor: '#fff'}}>
+          <TouchableOpacity onPress={()=>{
+            let {sortby}=this.state;
+            let s=sortby=="nameD"?"nameA":"nameD"
+            this.setState({sortby:s})}}>
+          <Image source={require("../assets/images/sort.png")} style={filStyle}/>
+          </TouchableOpacity>
+          <SearchBar
+              ref={search => this.searchRef = search}
+              platform="android"
+              round={true}
+              containerStyle={{backgroundColor: '#fff', width : '80%'}}
+              inputContainerStyle={{backgroundColor:'#EDEEF1', height:36,  marginStart:18,}}
+              placeholder={'Search'}
+              placeholderTextColor={'#232D4C95'}
+              onChangeText={this.searchInit.bind(this)}
+              value={searchTerm}
+              onCancel = {this.closeSearch.bind(this)}
+              searchIcon={<Image source={require('../assets/images/ic_search.png')}/>}
+          />
+        </View>
+    )
+  }
+
+
+  closeSearch=()=>{
+    this.setState(
+        {
+          searchTerm:"",searchShow:false, searchList:[]
+        }
+    )
   }
 
   openWap= (con) =>{
@@ -134,7 +205,7 @@ class Screen1 extends React.Component {
       <Provider locale={enUS}>
         <View style={{flexDirection: 'column', flex: 1}}>
           <View style={{marginTop:15,backgroundColor:'#fff'}}>
-            {this.renderFilters()}
+            {this.renderSearchAndFilter()}
           </View>
           <ScrollView contentContainerStyle={[styles.scrollViewStyle]}
                       refreshControl={
@@ -145,7 +216,7 @@ class Screen1 extends React.Component {
                       }>
             <View style={{flexDirection: 'column'}}>
 
-              {this.renderFlatList()}
+            {this.renderFlatList()}
             </View>
           </ScrollView>
           <WingBlank style={[styles.bottomNav]}>
@@ -223,6 +294,9 @@ class Screen1 extends React.Component {
     else
       dataOrders=this.props.cats.sort(this.sortComparison)
 
+      if(this.state.searchTerm!=="")
+        dataOrders=this.state.searchList
+
     if(dataOrders===null || dataOrders===undefined || dataOrders.length===0) {
       return (
 
@@ -251,15 +325,19 @@ class Screen1 extends React.Component {
   }
 
 
-  tasksCardContent({name,phone,type},i) {
-    if (name===null || phone===undefined || type===null) {
+  tasksCardContent({displayName,phoneNumbers},i) {
+    if (displayName===null || phoneNumbers===[]) {
       return this.getErrorStateForCards()
     }
+
+    const phones = new Set();
+    var redPhone=[];
+    redPhone = phoneNumbers.filter(item => !phones.has(JSON.stringify(item.number)) ? phones.add(JSON.stringify(item.number)) && true : false);
 
     return (
         <View style={[styles.cardStyle,{flex:1, flexDirection: 'column',backgroundColor:'#fff'}]}>
 
-         <View style={{flexDirection:'row',flex:1,marginTop:16}}>
+         {/* <View style={{flexDirection:'row',flex:1,marginTop:16}}>
             <View style={{flex:0.4,justifyContent:'center',alignItems:'center'}}>
               <Text style={{color:'#9690DF',marginLeft:2,fontSize:14}}> Name</Text>
             </View>
@@ -270,29 +348,40 @@ class Screen1 extends React.Component {
              <View style={{flex:0.2,justifyContent:'center',alignItems:'center'}}>
              <Text style={{color:'#9690DF',fontSize:14}}> Msg</Text>
             </View>
-          </View>
+          </View> */}
 
 
           <View style={{flexDirection:'row',flex:1,marginTop:16,alignContent:'center',alignItems:'center',marginBottom:16}}>
 
           <View style={{flex:0.4,justifyContent:'center',alignItems:'center'}}>
-              <Text style={{color:'#969BA9',marginLeft:2,fontSize:16}}> {name} </Text>
+              <Text style={{color:'#969BA9',marginLeft:2,fontSize:16}}> {displayName} </Text>
             </View>
 
-              <View style={{flex:0.4,alignItems:'center',justifyContent:'center'}}>
-                <Text style={{color:'#31132E',fontSize:16}}> {phone} </Text>
-              </View>
-              <View style={{flex:0.2,justifyContent:'center',alignItems:'center'}}>
-             <TouchableOpacity onPress={
+              <View style={{flex:0.6,alignItems:'center',justifyContent:'center',marginTop1:5}}>
+                { 
+              
+                redPhone.map((item,ind)=>{
+                  let bkg=ind%2==0?"#fff":"#f4f4f4";
+
+                 return (
+                    <View style={{width:"100%",backgroundColor:bkg,flexDirection:"row",justifyContent:"space-evenly",marginTop:5}}>
+                  <Text style={{color:'#31132E',fontSize:16}}> {item.number} </Text>
+                  <TouchableOpacity onPress={
                  ()=>{
-                   let n=phone.length
-                   let con = phone.substring(n-10,n)
+                   let n=item.number.length
+                   let con = item.number.substring(n-10,n)
                    console.log("csk->",con)
                    this.openWap(con)
                }}>
-                 <Image source={require("../assets/images/whatsapp.png")} style={{width:32,height:32}}/>
+                 <Image source={require("../assets/images/whatsapp.png")} style={{width:28,height:28}}/>
                  </TouchableOpacity>
-            </View>
+                  </View>
+                  )
+                })
+                 }
+              </View>
+              {/* <View style={{flex:0.2,justifyContent:'center',alignItems:'center'}}>
+            </View> */}
           </View>
           <View style={{alignItems:'center',justifyContent:'center',width:'90%',height:1.5,borderWidth:1,borderRadius:1, borderColor:'#D4D5DA80'}}/>
 
@@ -305,8 +394,8 @@ class Screen1 extends React.Component {
     let valA,valB;
     if(this.state.sortby==="nameA")
     {
-      valA=a.name.toLowerCase()
-      valB=b.name.toLowerCase()
+      valA=a.displayName.toLowerCase()
+      valB=b.displayName.toLowerCase()
     }else if(this.state.sortby==="colorA")
     {
       valA=a.color.toLowerCase()
@@ -356,7 +445,6 @@ const styles = StyleSheet.create({
   cardStyle: {
     marginHorizontal: 18,
     marginBottom: 16,
-    height: 100,
     flexDirection: 'row',
     flex: 1,
     ...Platform.select({
@@ -411,7 +499,7 @@ const styles = StyleSheet.create({
   },
 
   bottomNav:{
-    height:70,
+    height:80,
     shadowColor: '#000',
     shadowOffset: { width: 5, height: 8 },
     shadowOpacity: 0.8,
@@ -434,6 +522,10 @@ const styles = StyleSheet.create({
     marginRight:17,
     marginBottom: 8
   },
+  filterStyle:{alignSelf:'center',alignItems: 'center',justifyContent: 'center'},
+  filterActive:{tintColor:'#4A90E2',
+  transform: [{ rotate: '180deg' }]
+},
   submitText:{
     color:'#F78765',
     textAlign:'center',
