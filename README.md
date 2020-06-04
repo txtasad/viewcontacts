@@ -22,7 +22,7 @@ A simple React Native App using Redux for State Management to display existing C
 
 ## App features
 * App shows existing contacts.
-* Sort Pokemons by their english names in ascending or descending order
+* Sort contacts by their names in ascending or descending order
 * Navigation pannel in the bottom has 2 option to contacts dashboard and settings (a dummy 2nd screen).
 * Each card has option to whatsapp the contact directly after opening the app.
 * App uses Redux for state management.

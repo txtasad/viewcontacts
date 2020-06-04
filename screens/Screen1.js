@@ -9,7 +9,7 @@ import {
   RefreshControl,
   Platform,
   Text,
-  Dimensions, TextInput, FlatList, StatusBar
+  Dimensions, TextInput, FlatList, StatusBar, Linking,
 } from 'react-native'
 
 import enUS from '@ant-design/react-native/lib/locale-provider/en_US';
@@ -23,6 +23,8 @@ import Toast from 'react-native-simple-toast';
 
 import { connect } from 'react-redux';
 import { addCat,deleteCat,addAll } from '../actions/act';
+import Contacts from 'react-native-contacts';
+import { PermissionsAndroid } from 'react-native';
 
 
 const TAG = 'MyDashboard';
@@ -66,7 +68,15 @@ class Screen1 extends React.Component {
         {name:"saad",phone:"9540154319",type:"home"}
       ]
     )
-    this.getList()
+
+    // PermissionsAndroid.request(
+    //   PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+    //   {
+    //     'title': 'Contacts',
+    //     'message': 'This app would like to view your contacts.',
+    //     'buttonPositive': 'Please accept'
+    //   }
+    // ).then(()=>this.getList() )
   }
 
   setErrorState() {
@@ -92,11 +102,20 @@ class Screen1 extends React.Component {
 
     getList = () => {
       Contacts.getAll((err, contacts) => {
-          if (err === 'denied') {
-              console.log("cannot access");
+          if (err) {
+              console.log("csk->",err);
           } else {
-              console.log(contacts);
+              console.log("csk->",contacts);
           }
+      })
+  }
+
+  openWap= (con) =>{
+      let url = 'whatsapp://send?text=' + "hii from myscoot" + '&phone=91' + con;
+      Linking.openURL(url).then((data) => {
+        console.log('WhatsApp Opened');
+      }).catch(() => {
+        alert('Make sure Whatsapp installed on your device');
       })
   }
 
@@ -265,8 +284,12 @@ class Screen1 extends React.Component {
               </View>
               <View style={{flex:0.2,justifyContent:'center',alignItems:'center'}}>
              <TouchableOpacity onPress={
-                 ()=>this.props.delete(key)
-               }>
+                 ()=>{
+                   let n=phone.length
+                   let con = phone.substring(n-10,n)
+                   console.log("csk->",con)
+                   this.openWap(con)
+               }}>
                  <Image source={require("../assets/images/whatsapp.png")} style={{width:32,height:32}}/>
                  </TouchableOpacity>
             </View>
