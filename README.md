@@ -9,7 +9,6 @@ A simple React Native App using Redux for State Management to display existing C
 </p>
 
 <p align="center">
-    <img src="/media/Screen3.jpg" width="250" height="380">
     <img src="/media/Screen4.jpg" width="250" height="380">
 </p>
 
